@@ -52,7 +52,7 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
      *                                                                             *
      * Renders HTML 5 video player at the detection of HTML5 browsers. It degrades * 
      * gracefully to the browser built-in video player when the browser does not   *
-     * support HTML5.                                                              * 
+     * support HTML5.                                                              *
      *******************************************************************************/
     
     //This is the default key bindings
@@ -87,6 +87,11 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
         }
     };
 
+    fluid.demands("controllers", ["fluid.videoPlayer.showNativeControls"], {
+        funcName: "fluid.videoPlayer.nativeControls",
+        args: ["{videoPlayer}.dom.video", fluid.COMPONENT_OPTIONS]
+    });
+
     /**
      * Video player renders HTML 5 video content and degrades gracefully to an alternative.
      * 
@@ -100,7 +105,7 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             media: {
                 type: "fluid.videoPlayer.media",
                 container: "{videoPlayer}.dom.video",
-                createOnEvent: "onCreateMediaReady",
+                createOnEvent: "onTemplateReady",
                 priority: "first",
                 options: {
                     model: "{videoPlayer}.model",
@@ -113,7 +118,7 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             controllers: {
                 type: "fluid.videoPlayer.controllers",
                 container: "{videoPlayer}.dom.controllers",
-                createOnEvent: "onCreateControllersReady",
+                createOnEvent: "onHtml5BrowserDetected",
                 options: {
                     model: "{videoPlayer}.model",
                     applier: "{videoPlayer}.applier",
@@ -129,7 +134,7 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             captionner: {
                 type: "fluid.videoPlayer.captionner",
                 container: "{videoPlayer}.dom.caption",
-                createOnEvent: "onCreateCaptionnerReady",
+                createOnEvent: "onHtml5BrowserDetected",
                 options: {
                     model: "{videoPlayer}.model",
                     applier: "{videoPlayer}.applier"
@@ -185,18 +190,14 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             onCaptionnerReady: null,
             afterScrub: null,
             onStartScrub: null,
+            onHtml5BrowserDetected: null,
             onOldBrowserDetected: null,
             onTemplateLoadError: null,
             onReady: null,
             
             // public, time events
             onTimeChange: null,
-            onIntervalChange: null,
-            
-            // The following events are private
-            onCreateControllersReady: null,
-            onCreateMediaReady: null,
-            onCreateCaptionnerReady: null
+            onIntervalChange: null
         },
         listeners: {
             onViewReady: "{videoPlayer}.refresh"
@@ -206,9 +207,8 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             caption: ".flc-videoPlayer-captionArea",
             controllers: ".flc-videoPlayer-controller"
         },
-        selectorsToIgnore: ["caption"],
+        selectorsToIgnore: ["video", "caption"],
         keyBindings: defaultKeys,
-        produceTree: "fluid.videoPlayer.produceTree",
         controls: "custom",
         model: {
             states: {
@@ -307,40 +307,10 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
         });
     };
 
-    fluid.videoPlayer.produceTree = function (that) {
-        var tree = {};
-        
-        if (fluid.hasFeature("fluid.browser.html5") && that.options.controls === "native") {
-            // Use browser built-in video player
-            tree.video = {
-                decorators: [{
-                    type: "attrs",
-                    attributes: {
-                        controls: "true"
-                    }
-                }]
-            };
-        } else if (that.canRenderMedia(that.model.video.sources)) {
-            // Keep the selector to render "fluid.videoPlayer.media"
-            that.options.selectorsToIgnore.push("video");
-        }
-        
-        // Keep the selector to render "fluid.videoPlayer.controllers"
-        if (that.canRenderControllers(that.options.controls)) {
-            that.options.selectorsToIgnore.push("controllers");
-        }
-        
-        return tree;
-    };
-
     fluid.videoPlayer.preInit = function (that) {
-        that.canRenderControllers = function (controlsType) {
-            return (fluid.hasFeature("fluid.browser.html5") && controlsType === "custom") ? true : false;
-        };
-        
-        that.canRenderMedia = function (videoSource) {
-            return videoSource ? true : false;
-        };
+        if (!that.model.video.sources) {
+            fluid.fail("Undefined option model.video.sources in " + that.typeName + ".");
+        }
         
         that.play = function (ev) {
             that.applier.fireChangeRequest({
@@ -403,6 +373,15 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             that.fullscreen();
         };
 
+        // Keep the selector to render "fluid.videoPlayer.controllers"
+        if (fluid.hasFeature("fluid.browser.html5")) {
+            that.options.selectorsToIgnore.push("controllers");
+        }
+        
+        // Generate the typetag to trigger the demands block that wires the nativeControls component onto "controller"
+        if (fluid.hasFeature("fluid.browser.html5") && that.options.controls === "native") {
+            that.videoPlayerShowNativeControls = fluid.typeTag("fluid.videoPlayer.showNativeControls");
+        }
     };
     
     fluid.videoPlayer.finalInit = function (that) {
@@ -437,14 +416,8 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             if (!fetchFailed) {
                 that.events.onTemplateReady.fire();
 
-                if (that.canRenderMedia(that.model.video.sources)) {
-                    that.events.onCreateMediaReady.fire();
-                }
-                if (that.canRenderControllers(that.options.controls)) {
-                    that.events.onCreateControllersReady.fire();
-                }
                 if (fluid.hasFeature("fluid.browser.html5")) {
-                    that.events.onCreateCaptionnerReady.fire();
+                    that.events.onHtml5BrowserDetected.fire();
                 }
             }
 
