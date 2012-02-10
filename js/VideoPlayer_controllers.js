@@ -202,7 +202,14 @@ https://source.fluidproject.org/svn/LICENSE.txt
             applier: "{controllers}.applier"
         },
 
-        produceTree: "fluid.videoPlayer.controllers.produceTree"
+        produceTree: "fluid.videoPlayer.controllers.produceTree",
+        
+        templates: {
+            controls: {
+                forceCache: true,
+                href: "../html/videoPlayer_controls_template.html"
+            }
+        }
     });
 
     fluid.videoPlayer.controllers.produceTree = function (that) {
@@ -263,12 +270,19 @@ https://source.fluidproject.org/svn/LICENSE.txt
     };
 
     fluid.videoPlayer.controllers.finalInit = function (that) {
-        that.renderer.refreshView();
-        createControllerMarkup(that);
-        bindControllerModel(that);
-        bindControllerDOMEvents(that);
+        fluid.fetchResources(that.options.templates, function (resourceSpecs) {
+            if (!resourceSpecs.controls.fetchError) {
+                that.container.append(resourceSpecs.controls.resourceText);
+                that.renderer.refreshView();
+                createControllerMarkup(that);
+                bindControllerModel(that);
+                bindControllerDOMEvents(that);
 
-        that.events.onControllersReady.fire(that);
+                that.events.onControllersReady.fire(that);
+            } else {
+                fluid.fail("fetch controls template failed");
+            }
+        });
     };
     
     /********************************************
