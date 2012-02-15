@@ -134,7 +134,7 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             captionner: {
                 type: "fluid.videoPlayer.captionner",
                 container: "{videoPlayer}.dom.caption",
-                createOnEvent: "onHtml5BrowserDetected",
+                createOnEvent: "onCreateCaptionnerReady",
                 options: {
                     model: "{videoPlayer}.model",
                     applier: "{videoPlayer}.applier"
@@ -143,11 +143,12 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             captionLoader: {
                 type: "fluid.videoPlayer.captionLoader",
                 container: "{videoPlayer}.container",
-                createOnEvent: "onTemplateReady",
+                createOnEvent: "onHtml5BrowserDetected",
                 options: {
                     model: "{videoPlayer}.model",
                     applier: "{videoPlayer}.applier",
                     events: {
+                        onReady: "{videoPlayer}.events.onCreateCaptionnerReady",
                         onCaptionsLoaded: "{videoPlayer}.events.onCaptionsLoaded"
                     }
                 }
@@ -177,9 +178,10 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             }
         },
         preInitFunction: "fluid.videoPlayer.preInit",
+        postInitFunction: "fluid.videoPlayer.postInit",
         finalInitFunction: "fluid.videoPlayer.finalInit",
         events: {
-            onReadyToLoadCaptions: null,
+            onCreateCaptionnerReady: null,
             onCaptionsLoaded: null,
             onVolumeChange: null,
             onScrub: null,
@@ -200,14 +202,18 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             onIntervalChange: null
         },
         listeners: {
-            onViewReady: "{videoPlayer}.refresh"
+            onViewReady: "{videoPlayer}.fullscreen"
         },
         selectors: {
             video: ".flc-videoPlayer-video",
             caption: ".flc-videoPlayer-captionArea",
             controllers: ".flc-videoPlayer-controller"
         },
-        selectorsToIgnore: ["video", "caption"],
+        strings: {
+            captionsOff: "Captions OFF",
+            turnCaptionsOff: "Turn Captions OFF"
+        },
+        selectorsToIgnore: ["video", "caption", "controllers"],
         keyBindings: defaultKeys,
         controls: "custom",
         model: {
@@ -218,14 +224,18 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
                 displayCaptions: true,
                 fullscreen: false,
                 volume: 60,
+                muted: false,
                 canPlay: false
             },
             video: {
                 sources: null
             },
             captions: {
+                selection: "none",
+                choices: [],
+                names: [],
+                show: false,
                 sources: null,
-                currentTrack: undefined,
                 conversionServiceUrl: "/videoPlayer/conversion_service/index.php",
                 track: undefined
             }
@@ -312,12 +322,14 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             fluid.fail("Undefined option model.video.sources in " + that.typeName + ".");
         }
         
-        that.play = function (ev) {
-            that.applier.fireChangeRequest({
-                "path": "states.play",
-                "value": !that.model.states.play
-            });
-        };
+        // build the 'choices' from the caption list provided
+        fluid.each(that.options.model.captions.sources, function (value, key) {
+            that.options.model.captions.choices.push(key);
+            that.options.model.captions.names.push(key);
+        });
+        // add the 'turn captions off' option
+        that.options.model.captions.choices.push("none");
+        that.options.model.captions.names.push(that.options.strings.captionsOff);
 
         that.fullscreen = function () {
             var video = that.locate("video");
@@ -334,6 +346,23 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
                     height: video[0].videoHeight
                 });
             }
+        };
+    };
+
+    fluid.videoPlayer.postInit = function (that) {
+        that.canRenderControllers = function (controlsType) {
+            return (fluid.hasFeature("fluid.browser.html5") && controlsType === "custom") ? true : false;
+        };
+        
+        that.canRenderMedia = function (videoSource) {
+            return videoSource ? true : false;
+        };
+        
+        that.play = function (ev) {
+            that.applier.fireChangeRequest({
+                "path": "states.play",
+                "value": !that.model.states.play
+            });
         };
 
         that.incrVolume = function () {
@@ -368,15 +397,6 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             }
             that.events.afterScrub.fire();
         };
-
-        that.refresh = function () {
-            that.fullscreen();
-        };
-
-        // Keep the selector to render "fluid.videoPlayer.controllers"
-        if (fluid.hasFeature("fluid.browser.html5")) {
-            that.options.selectorsToIgnore.push("controllers");
-        }
         
         // Generate the typetag to trigger the demands block that wires the nativeControls component onto "controller"
         if (fluid.hasFeature("fluid.browser.html5") && that.options.controls === "native") {
@@ -385,6 +405,8 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
     };
     
     fluid.videoPlayer.finalInit = function (that) {
+        that.container.attr("role", "application");
+
         // Render each media source with its custom renderer, registered by type.
         // If we aren't on an HTML 5 video-enabled browser, don't bother setting up the controller or captions.
 
