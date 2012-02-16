@@ -120,6 +120,7 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
         events: {
             onControllersReady: null,
             onTemplateReady: null,
+            onTemplateLoadError: null,
             onVolumeChange: null,
             onStartTimeChange: null,
             onTimeChange: null,
@@ -158,11 +159,15 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
                 that.events.onTemplateReady.fire();
                 
                 bindControllerModel(that);
-                
-                that.events.onControllersReady.fire(that);
             } else {
-                fluid.fail("fetch controls template failed");
+                fluid.log("couldn't fetch" + resourceSpecs.controls.href);
+                fluid.log("status: " + resourceSpecs.controls.fetchError.status +
+                    ", textStatus: " + resourceSpecs.controls.fetchError.textStatus +
+                    ", errorThrown: " + resourceSpecs.controls.fetchError.errorThrown);
+                that.events.onTemplateLoadError.fire(resourceSpecs.controls.href);
             }
+
+            that.events.onControllersReady.fire(that);
         });
     };
     

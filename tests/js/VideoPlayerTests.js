@@ -23,6 +23,18 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
 
         var initVideoPlayer = function (testOptions) {
             var opts = {
+                components: {
+                    controllers: {
+                        options: {
+                            templates: {
+                                controls: {
+                                    forceCache: true,
+                                    href: "../../html/videoPlayer_controls_template.html"
+                                }
+                            }
+                        }
+                    }
+                },
                 model: {
                     video: {
                         sources: [
@@ -49,6 +61,7 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
         videoPlayerTests.asyncTest("Configurable template path (FLUID-4572): valid path", function () {
             expect(1);
             var vidPlayer = initVideoPlayer({
+                components: null,  // Prevent the async loading of other sub-renderer-component template(s)
                 listeners: {
                     onTemplateReady: function () {
                         jqUnit.assertTrue("The template should load", true);
@@ -65,6 +78,7 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
         videoPlayerTests.asyncTest("Configurable template path (FLUID-4572): invalid path", function () {
             expect(1);
             var vidPlayer = initVideoPlayer({
+                components: null,  // Prevent the async loading of other sub-renderer-component template(s)
                 templates: {
                     videoPlayer: {
                         href: "bad/test/path.html"
@@ -92,7 +106,7 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
         }
         
         videoPlayerTests.asyncTest("HTML5: video player instantiation with customized controller", function () {
-            expect(5);
+            expect(6);
             
             setupEnvironment(true);
             
@@ -102,6 +116,7 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
                     onReady: function (videoPlayer) {
                         jqUnit.assertNotUndefined("The sub-component media has been instantiated", videoPlayer.media);
                         jqUnit.assertNotUndefined("The sub-component controllers has been instantiated", videoPlayer.controllers);
+                        jqUnit.assertEquals("The sub-component controllers is the custom controller", "fluid.videoPlayer.controllers", videoPlayer.controllers.typeName);
                         jqUnit.assertNotUndefined("The sub-component captionner has been instantiated", videoPlayer.captionner);
                         jqUnit.assertNotUndefined("The sub-component captionLoader has been instantiated", videoPlayer.captionLoader);
                         jqUnit.assertUndefined("The sub-component browserCompatibility has NOT been instantiated", videoPlayer.browserCompatibility);
@@ -113,7 +128,7 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
         });
 
         videoPlayerTests.asyncTest("HTML5: video player instantiation with native controller", function () {
-            expect(5);
+            expect(6);
             
             setupEnvironment(true);
             
@@ -122,7 +137,8 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
                 listeners: {
                     onReady: function (videoPlayer) {
                         jqUnit.assertNotUndefined("The sub-component media has been instantiated", videoPlayer.media);
-                        jqUnit.assertUndefined("The sub-component controllers has been instantiated", videoPlayer.controllers);
+                        jqUnit.assertNotUndefined("The sub-component controllers has been instantiated", videoPlayer.controllers);
+                        jqUnit.assertEquals("The sub-component controllers is the native controller", "fluid.videoPlayer.nativeControls", videoPlayer.controllers.typeName);
                         jqUnit.assertNotUndefined("The sub-component captionner has been instantiated", videoPlayer.captionner);
                         jqUnit.assertNotUndefined("The sub-component captionLoader has been instantiated", videoPlayer.captionLoader);
                         jqUnit.assertUndefined("The sub-component browserCompatibility has NOT been instantiated", videoPlayer.browserCompatibility);

@@ -27,10 +27,23 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
         gradeNames: ["fluid.viewComponent", "autoInit"],
         container: null,    // Must be supplied. Needs to be a html5 media element
         finalInitFunction: "fluid.videoPlayer.nativeControls.finalInit",
+        events: {
+            onNonMediaElementDetected: null,
+            onReady: null
+        }
     });
 
     fluid.videoPlayer.nativeControls.finalInit = function (that) {
-        that.container.attr("controls", "true");
+        var containerTagName = that.container[0].tagName.toUpperCase();
+        
+        if (containerTagName !== "VIDEO" && containerTagName !== "AUDIO") {
+            fluid.log("Non html5 medi(NOT <video> or <audio>) is supplied as a container in " + that.typeName);
+            that.events.onNonMediaElementDetected.fire();
+        } else {
+            that.container.attr("controls", "true");
+        }
+        
+        that.events.onReady.fire();
     };
 
 })(jQuery);
