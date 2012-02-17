@@ -41,7 +41,6 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             scrubber: {
                 type: "fluid.videoPlayer.controllers.scrubber",
                 container: "{controllers}.dom.scrubberContainer",
-                createOnEvent: "onTemplateReady",
                 options: {
                     model: "{controllers}.model",
                     applier: "{controllers}.applier",
@@ -55,7 +54,6 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             volumeControl: {
                 type: "fluid.videoPlayer.controllers.volumeControls",
                 container: "{controllers}.dom.volumeContainer",
-                createOnEvent: "onTemplateReady",
                 options: {
                     model: "{controllers}.model",
                     applier: "{controllers}.applier",
@@ -67,7 +65,6 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             captionControls: {
                 type: "fluid.videoPlayer.controllers.captionControls",
                 container: "{controllers}.dom.captionControlsContainer",
-                createOnEvent: "onTemplateReady",
                 options: {
                     model: "{controllers}.model",
                     applier: "{controllers}.applier"
@@ -76,7 +73,6 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             playButton: {
                 type: "fluid.videoPlayer.controllers.toggleButton",
                 container: "{controllers}.container",
-                createOnEvent: "onTemplateReady",
                 options: {
                     selectors: {
                         button: ".flc-videoPlayer-play"
@@ -97,7 +93,6 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             fullScreenButton: {
                 type: "fluid.videoPlayer.controllers.toggleButton",
                 container: "{controllers}.container",
-                createOnEvent: "onTemplateReady",
                 options: {
                     selectors: {
                         button: ".flc-videoPlayer-fullscreen"
@@ -119,8 +114,6 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
         finalInitFunction: "fluid.videoPlayer.controllers.finalInit",
         events: {
             onControllersReady: null,
-            onTemplateReady: null,
-            onTemplateLoadError: null,
             onVolumeChange: null,
             onStartTimeChange: null,
             onTimeChange: null,
@@ -141,34 +134,13 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
             fullscreenOff: "fl-videoPlayer-state-fullscreenOff",
             fullscreenIcon: "ui-icon-extlink",
             captionIcon: "ui-icon-comment"
-        },
-        
-        templates: {
-            controls: {
-                forceCache: true,
-                href: "../html/videoPlayer_controls_template.html"
-            }
         }
     });
 
     fluid.videoPlayer.controllers.finalInit = function (that) {
+        bindControllerModel(that);
 
-        fluid.fetchResources(that.options.templates, function (resourceSpecs) {
-            if (!resourceSpecs.controls.fetchError) {
-                that.container.append(resourceSpecs.controls.resourceText);
-                that.events.onTemplateReady.fire();
-                
-                bindControllerModel(that);
-            } else {
-                fluid.log("couldn't fetch" + resourceSpecs.controls.href);
-                fluid.log("status: " + resourceSpecs.controls.fetchError.status +
-                    ", textStatus: " + resourceSpecs.controls.fetchError.textStatus +
-                    ", errorThrown: " + resourceSpecs.controls.fetchError.errorThrown);
-                that.events.onTemplateLoadError.fire(resourceSpecs.controls.href);
-            }
-
-            that.events.onControllersReady.fire(that);
-        });
+        that.events.onControllersReady.fire(that);
     };
     
     /********************************************

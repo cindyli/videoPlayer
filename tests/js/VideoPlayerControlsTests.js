@@ -21,62 +21,6 @@ fluid.registerNamespace("fluid.tests");
 (function ($) {
     $(document).ready(function () {
 
-        var videoPlayerControlsTests = new jqUnit.TestCase("Video Player Controls Tests");
-
-        var initControls = function (testOptions) {
-            var opts = {
-                templates: {
-                    controls: {
-                        // override the default template path
-                        // TODO: We need to refactor the VideoPlayer to better support
-                        //       overriding the path without needing to know file names
-                        href: "../../html/videoPlayer_controls_template.html"
-                    }
-                }
-            };
-            $.extend(true, opts, testOptions);
-            return fluid.videoPlayer.controllers("#videoPlayer", opts);
-        };
-
-        videoPlayerControlsTests.asyncTest("Configurable template path: valid path", function () {
-            expect(1);
-            var controller = initControls({
-                components: null,
-                listeners: {
-                    onTemplateReady: function () {
-                        jqUnit.assertTrue("The template should load", true);
-                        start();
-                    },
-                    onTemplateLoadError: function (href) {
-                        jqUnit.assertTrue("Template Load Error should not fire", false);
-                        start();
-                    }
-                }
-            });
-        });
-
-        videoPlayerControlsTests.asyncTest("Configurable template path: invalid path", function () {
-            expect(1);
-            var vidPlayer = initControls({
-                components: null,
-                templates: {
-                    controls: {
-                        href: "bad/test/path.html"
-                    }
-                },
-                listeners: {
-                    onTemplateReady: function () {
-                        jqUnit.assertTrue("The template should not load", false);
-                        start();
-                    },
-                    onTemplateLoadError: function (href) {
-                        jqUnit.assertTrue("Event 'onTemplateLoadError' should fire", true);
-                        start();
-                    }
-                }
-            });
-        });
-
         fluid.tests.toggleButtonDefaults = fluid.defaults("fluid.videoPlayer.controllers.toggleButton");
 
         fluid.tests.pressEventHandler = function () {
@@ -91,18 +35,6 @@ fluid.registerNamespace("fluid.tests");
         };
 
         var baseVideoPlayerOpts = {
-                components: {
-                    controllers: {
-                        options: {
-                            templates: {
-                                controls: {
-                                    forceCache: true,
-                                    href: "../../html/videoPlayer_controls_template.html"
-                                }
-                            }
-                        }
-                    }
-                },
             model: {
                 video: {
                     sources: [
@@ -127,6 +59,8 @@ fluid.registerNamespace("fluid.tests");
             $.extend(true, opts, testOpts);
             return fluid.videoPlayer("#videoPlayer", opts);
         };
+
+        var videoPlayerControlsTests = new jqUnit.TestCase("Video Player Controls Tests");
 
         var baseToggleButtonOpts = {
             selectors: {
@@ -428,13 +362,13 @@ fluid.registerNamespace("fluid.tests");
             var numLangs = Object.keys(baseCaptionOpts.model.captions.sources).length + 1;
             $.extend(true, captionOpts, {
                 listeners: {
-                    onControllersReady: function (that) {
-                        var captionButton = that.captionControls.locate("button");
-                        var languageRadioButtons = that.captionControls.locate("languageButton");
-                        var languageList = that.captionControls.locate("languageList");
-                        var captionArea = that.captionControls.locate("captionArea");
+                    onReady: function (that) {
+                        var captionButton = that.controllers.captionControls.locate("button");
+                        var languageRadioButtons = that.controllers.captionControls.locate("languageButton");
+                        var languageList = that.controllers.captionControls.locate("languageList");
+                        var captionArea = that.controllers.captionControls.locate("captionArea");
 
-                        // TODO: this is a workaround for FLUID-4592: a default caption *must* be loaded
+// TODO: this is a workaround for FLUID-4592: a default caption *must* be loaded
 //       for the intervalEventsConductor to be created
 //                        jqUnit.assertEquals("Initially, captions should not be showing", "none", that.model.captions.selection);
 //                        jqUnit.notVisible("The caption area should be hidden initially", captionArea);
