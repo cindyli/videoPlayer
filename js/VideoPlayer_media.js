@@ -135,6 +135,7 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
                 path: "canPlay",
                 value: getcanPlayData(ev.data.obj)
             });
+            ev.data.obj.currentTime = 0;
         });
 
         video.bind("ended", function () {

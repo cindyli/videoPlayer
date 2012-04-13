@@ -359,17 +359,16 @@ https://github.com/fluid-project/infusion/raw/master/Infusion-LICENSE.txt
                 "aria-valuetext": fluid.videoPlayer.formatTime(that.model.currentTime) + " of " + fluid.videoPlayer.formatTime(that.model.totalTime)
             });
         };
-
-        that.updateMin();
-        that.updateMax();
-        that.updateCurrent();
-
     };
 
     fluid.videoPlayer.controllers.scrubber.finalInit = function (that) {
         createScrubberMarkup(that);
         bindScrubberDOMEvents(that);
         bindScrubberModel(that);
+        
+        that.updateMin();
+        that.updateMax();
+        that.updateCurrent();
         
         that.events.onScrubberReady.fire();
     };
